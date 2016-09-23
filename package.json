@@ -1,0 +1,21 @@
+{
+  "name": "nsq-seneca",
+  "version": "0.0.1",
+  "description": "Use nsq to connect seneca services.",
+  "main": "index.js",
+  "scripts": {
+    "test": "lab"
+  },
+  "author": "Massimiliano Mantione",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/massimiliano-mantione/nsq-seneca.git"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "lab": "^11.0.1",
+    "nsqjs": "^0.7.12",
+    "seneca": "^3.1.0",
+    "typescript": "^2.0.3"
+  }
+}
