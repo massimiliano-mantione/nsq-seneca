@@ -4,6 +4,7 @@
   "description": "Use nsq to connect seneca services.",
   "main": "build/main.js",
   "scripts": {
+    "lint": "tslint 'src/**/*.ts'",
     "test": "mocha --require ts-node/register 'src/test/**/*.ts'",
     "test-build": "mocha --require ts-node/register 'build/test/**/*.js'",
     "tsc": "tsc"
@@ -23,6 +24,8 @@
     "chai-as-promised": "^6.0.0",
     "mocha": "^3.1.0",
     "ts-node": "^1.3.0",
+    "tslint": "^3.15.1",
+    "tslint-config-standard": "^1.3.0",
     "typescript": "^2.0.3",
     "typings": "^1.4.0"
   }
