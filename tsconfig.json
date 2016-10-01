@@ -2,7 +2,7 @@
   "compilerOptions": {
     "module": "commonjs",
     "preserveConstEnums": true,
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitThis": true,
