@@ -1,8 +1,7 @@
 {
   "globalDependencies": {
     "mocha": "registry:env/mocha#2.2.5+20160926180742",
-    "node": "registry:env/node#6.0.0+20160918225031",
-    "seneca": "registry:dt/seneca#2.1.0+20160810210928"
+    "node": "registry:env/node#6.0.0+20160918225031"
   },
   "dependencies": {
     "chai": "registry:npm/chai#3.5.0+20160723033700",

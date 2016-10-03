@@ -17,7 +17,9 @@
     "target": "ES5"
   },
   "files": [
-    "typings/index.d.ts"
+    "typings/index.d.ts",
+    "src/nsqjs.d.ts",
+    "src/seneca.d.ts"
   ],
   "include": [
     "src/**/*"
