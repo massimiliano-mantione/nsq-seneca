@@ -156,7 +156,6 @@ function handle (this: Seneca.Instance, options: NsqOptions): string {
   return pluginName
 }
 
-
 let internal = {
   readonly fillNsqOptions,
   readonly makePluginName,

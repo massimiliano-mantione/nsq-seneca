@@ -4,7 +4,7 @@
   "description": "Use nsq to connect seneca services.",
   "main": "build/main.js",
   "scripts": {
-    "lint": "tslint 'src/**/*.ts'",
+    "lint": "tslint --exclude src/seneca.d.ts --exclude src/nsqjs.d.ts 'src/**/*.ts'",
     "test": "mocha --require ts-node/register 'src/test/**/*.ts'",
     "test-build": "mocha --require ts-node/register 'build/test/**/*.js'",
     "tsc": "tsc"
