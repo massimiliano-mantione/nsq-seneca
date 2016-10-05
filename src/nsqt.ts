@@ -335,13 +335,6 @@ function handle (this: Seneca.Instance, options: NsqOptions): string {
           time: msg.timestamp,
           id: msg.id
         }
-        // TODO: For now, ignore async errors
-        // s.do(m).then(() => {
-        //   msg.finish()
-        // }).catch((err) => {
-        //   s.log.error(err)
-        //   msg.requeue()
-        // })
         if (canReply && m[o.replyToProperty]) {
           s.act(m, (error?: Error, result?: any): void => {
             if (error) {
@@ -355,14 +348,16 @@ function handle (this: Seneca.Instance, options: NsqOptions): string {
                   s.log.error('Error publishing reply: ' + err)
                 }
               })
+              msg.finish()
             } else {
               s.log.warn('Empty reply, reply to: ', m[o.replyToProperty], 'reply by: ', m[o.replyByProperty])
             }
           })
         } else {
           s.act(m)
+          // TODO: Do not mark the message as processed immediately, but after `act` is done.
+          msg.finish()
         }
-        msg.finish()
       } catch (e) {
         s.log.error(e)
         msg.requeue()
