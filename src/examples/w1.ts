@@ -18,7 +18,13 @@ s.ready((err) => {
   let count = 1
   let action = () => {
     console.log('w1 sends count', count)
-    s.act({role: 't', count: count})
+    s.act({role: 't', 'rt$': null, count: count}, (err, rsp) => {
+      if (err) {
+        console.log('ERROR', err)
+      } else {
+        console.log('w1 receives', rsp.rsp)
+      }
+    })
     count++
   }
   setInterval(action, 1000)

@@ -6,8 +6,9 @@ let options: nsqt.NsqOptions = {
   handleDelay: 2000,
   lookupdHTTPAddresses: ['nsqlookupd:4161'],
   maxInFlight: 10000, // 1
-  heartbeatInterval: 10, // 30
+  heartbeatInterval: 2, // 30
   maxBackoffDuration: 32, // 128
+  lookupdPollInterval: 3, // 60
   requeueDelay: 15 // 90
 }
 

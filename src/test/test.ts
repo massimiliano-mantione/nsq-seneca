@@ -7,7 +7,8 @@ import * as main from '../nsqt'
 let {
   fillNsqOptions,
   makePluginName,
-  makeBasePattern
+  makeBasePattern,
+  SortedArray
 } = main._
 
 describe('NSQ transport internals', () => {
@@ -38,18 +39,36 @@ describe('NSQ transport internals', () => {
   it('Builds plugin names', () => {
     let o = fillNsqOptions({ topic: 't' })
     let name = makePluginName('forward', o)
-    expect(name).to.equal('nsqt::forward::t')
+    expect(name).to.equal('nsqt..forward..t')
   })
 
   it('Builds plugin names with channels', () => {
     let o = fillNsqOptions({ topic: 't', chan: 'c' })
     let name = makePluginName('handle', o)
-    expect(name).to.equal('nsqt::handle::t::c')
+    expect(name).to.equal('nsqt..handle..t..c')
   })
 
   it('Makes base patterns', () => {
     let o = fillNsqOptions({ topic: 't' })
     let bp = makeBasePattern(o)
     expect(bp).to.deep.equal({role: 't'})
+  })
+
+  it('Can sort arrays', () => {
+    let e = (n: number) => {
+      return {n}
+    }
+    let a = SortedArray.comparing('n', [e(1), e(4), e(2)])
+    expect(a.array).to.deep.equal([e(1), e(2), e(4)])
+    a.insert(e(3))
+    expect(a.array).to.deep.equal([e(1), e(2), e(3), e(4)])
+    expect(a.search(e(3))).to.equal(2)
+    expect(a.search(e(5))).to.equal(-1)
+    expect(a.search(e(1))).to.equal(0)
+    expect(a.search(e(4))).to.equal(3)
+    a.removeAt(1)
+    expect(a.array).to.deep.equal([e(1), e(3), e(4)])
+    a.removeAt(0)
+    expect(a.array).to.deep.equal([e(3), e(4)])
   })
 })

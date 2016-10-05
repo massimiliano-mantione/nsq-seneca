@@ -1,7 +1,8 @@
 {
   "globalDependencies": {
     "mocha": "registry:env/mocha#2.2.5+20160926180742",
-    "node": "registry:env/node#6.0.0+20160918225031"
+    "node": "registry:env/node#6.0.0+20160918225031",
+    "shortid": "registry:dt/shortid#0.0.0+20160316155526"
   },
   "dependencies": {
     "chai": "registry:npm/chai#3.5.0+20160723033700",

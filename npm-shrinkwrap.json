@@ -1256,6 +1256,11 @@
         }
       }
     },
+    "shortid": {
+      "version": "2.2.6",
+      "from": "shortid@latest",
+      "resolved": "https://registry.npmjs.org/shortid/-/shortid-2.2.6.tgz"
+    },
     "sigmund": {
       "version": "1.0.1",
       "from": "sigmund@>=1.0.0 <1.1.0",
