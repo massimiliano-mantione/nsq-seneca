@@ -80,8 +80,8 @@ function options (o: NsqOptions, topic: string, chan: string | null = null): Nsq
   return result
 }
 
-function makePluginName (kind: 'forward'|'handle', options: NsqOptionsFilled): string {
-  let result = 'nsqt..' + kind + '..' + options.topic
+function makePluginName (id: string, options: NsqOptionsFilled): string {
+  let result = 'nsqt..' + id + '..' + options.topic
   if (typeof options.chan === 'string') {
     result += '..' + options.chan
   }
@@ -187,17 +187,18 @@ function getLastNow (lastNow: number): number {
 
 const DONE = (err: undefined | Error, msg?: any): void => { return undefined }
 
-function forward (this: Seneca.Instance, options: NsqOptions): string {
+function connect (this: Seneca.Instance, isHandler: boolean, options: NsqOptions): string {
   let s = this as SenecaInstance
   let o = fillNsqOptions(options)
   let id = shortid.generate()
   let pending = SortedArray.comparing<PendingJob>('replyBy', [])
   let replyTopic = o.topic + '..' + id + EPHEMERAL
+  let channel = (typeof o.chan === 'string') ? o.chan : o.topic
+  let canReply = channel === o.topic
   let lastNow = 0
-  console.log('INIT', id, pending.array)
-
-  let pluginName = makePluginName('forward', o)
+  let pluginName = makePluginName(id, o)
   let bp = makeBasePattern(o)
+  s.log.info('INIT', pluginName)
 
   s.add({init: pluginName}, (args, done) => {
     let writerReady = false
@@ -237,6 +238,48 @@ function forward (this: Seneca.Instance, options: NsqOptions): string {
       }
     })
     replyReader.on(nsq.Reader.ERROR, (err) => { s.log.error(err) })
+
+    if (isHandler) {
+      let reader = new nsq.Reader(o.topic, channel, options)
+      setTimeout(() => { reader.connect() }, o.handleDelay)
+      reader.on(nsq.Reader.MESSAGE, (msg) => {
+        try {
+          let m = msg.json()
+          m['chan'] = channel
+          m['nsq$'] = {
+            time: msg.timestamp,
+            id: msg.id
+          }
+          if (canReply && m[o.replyToProperty]) {
+            s.act(m, (error?: Error, result?: any): void => {
+              if (error) {
+                s.log.error(error)
+                return
+              }
+              if (result) {
+                result[o.replyByProperty] = m[o.replyByProperty]
+                writer.publish(m[o.replyToProperty], result, (err) => {
+                  if (err) {
+                    s.log.error('Error publishing reply: ' + err)
+                  }
+                })
+                msg.finish()
+              } else {
+                s.log.warn('Empty reply, reply to: ', m[o.replyToProperty], 'reply by: ', m[o.replyByProperty])
+              }
+            })
+          } else {
+            s.act(m)
+            // TODO: Do not mark the message as processed immediately, but after `act` is done.
+            msg.finish()
+          }
+        } catch (e) {
+          s.log.error(e)
+          msg.requeue()
+        }
+      })
+      reader.on(nsq.Reader.ERROR, (err) => { s.log.error(err) })
+    }
 
     let initialized = false
     function ready () {
@@ -298,75 +341,12 @@ function forward (this: Seneca.Instance, options: NsqOptions): string {
   return pluginName
 }
 
+function forward (this: Seneca.Instance, options: NsqOptions): string {
+  return connect.call(this, false, options)
+}
+
 function handle (this: Seneca.Instance, options: NsqOptions): string {
-  let s = this as SenecaInstance
-  let o = fillNsqOptions(options)
-
-  let pluginName = makePluginName('handle', o)
-  let channel = (typeof o.chan === 'string') ? o.chan : o.topic
-  let canReply = channel === o.topic
-
-  s.add({ init: pluginName}, (args, done) => {
-    let writer = new nsq.Writer(o.writerNsqdHost, o.writerNsqdPort, {})
-    if (canReply) {
-      setTimeout(() => { writer.connect() }, o.forwardDelay)
-      writer.on(nsq.Writer.READY, () => {
-        s.log.debug('NSQ reply writer READY:', pluginName)
-        done()
-      })
-      writer.on(nsq.Writer.CLOSED, () => {
-        s.log.debug('NSQ reply writer CLOSED, reopening', pluginName)
-        writer.connect()
-      })
-      writer.on(nsq.Writer.ERROR, (err) => {
-        s.log.error('NSQ reply writer ERROR', err)
-      })
-    } else {
-      done()
-    }
-
-    let reader = new nsq.Reader(o.topic, channel, options)
-    setTimeout(() => { reader.connect() }, o.handleDelay)
-    reader.on(nsq.Reader.MESSAGE, (msg) => {
-      try {
-        let m = msg.json()
-        m['chan'] = channel
-        m['nsq$'] = {
-          time: msg.timestamp,
-          id: msg.id
-        }
-        if (canReply && m[o.replyToProperty]) {
-          s.act(m, (error?: Error, result?: any): void => {
-            if (error) {
-              s.log.error(error)
-              return
-            }
-            if (result) {
-              result[o.replyByProperty] = m[o.replyByProperty]
-              writer.publish(m[o.replyToProperty], result, (err) => {
-                if (err) {
-                  s.log.error('Error publishing reply: ' + err)
-                }
-              })
-              msg.finish()
-            } else {
-              s.log.warn('Empty reply, reply to: ', m[o.replyToProperty], 'reply by: ', m[o.replyByProperty])
-            }
-          })
-        } else {
-          s.act(m)
-          // TODO: Do not mark the message as processed immediately, but after `act` is done.
-          msg.finish()
-        }
-      } catch (e) {
-        s.log.error(e)
-        msg.requeue()
-      }
-    })
-    reader.on(nsq.Reader.ERROR, (err) => { s.log.error(err) })
-  })
-
-  return pluginName
+  return connect.call(this, true, options)
 }
 
 let internal = {
@@ -376,6 +356,7 @@ let internal = {
   readonly SortedArray
 }
 export {
+  connect,
   options,
   forward,
   handle,

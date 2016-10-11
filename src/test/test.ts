@@ -38,14 +38,14 @@ describe('NSQ transport internals', () => {
 
   it('Builds plugin names', () => {
     let o = fillNsqOptions({ topic: 't' })
-    let name = makePluginName('forward', o)
-    expect(name).to.equal('nsqt..forward..t')
+    let name = makePluginName('ID', o)
+    expect(name).to.equal('nsqt..ID..t')
   })
 
   it('Builds plugin names with channels', () => {
     let o = fillNsqOptions({ topic: 't', chan: 'c' })
-    let name = makePluginName('handle', o)
-    expect(name).to.equal('nsqt..handle..t..c')
+    let name = makePluginName('ID', o)
+    expect(name).to.equal('nsqt..ID..t..c')
   })
 
   it('Makes base patterns', () => {
