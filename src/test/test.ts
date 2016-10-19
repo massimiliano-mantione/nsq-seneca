@@ -3,13 +3,13 @@ import * as chaiAsPromised from 'chai-as-promised'
 chai.use(chaiAsPromised)
 let expect = chai.expect
 
-import * as main from '../nsqt'
+import * as nsqt from '../nsqt'
 let {
   fillNsqOptions,
   makePluginName,
   makeBasePattern,
   SortedArray
-} = main._
+} = nsqt._
 
 describe('NSQ transport internals', () => {
   it('Fills defaults', () => {
@@ -70,5 +70,97 @@ describe('NSQ transport internals', () => {
     expect(a.array).to.deep.equal([e(1), e(3), e(4)])
     a.removeAt(0)
     expect(a.array).to.deep.equal([e(3), e(4)])
+  })
+
+  describe('Shard state management', () => {
+    let {
+      isMaster,
+      initialShardState,
+      updateShardStatus,
+      // refreshActiveShards,
+      MAX_INACTIVE_SHARD_PERIODS,
+      SETTLEMENT_SHARD_PERIODS,
+      // NO_MASTER,
+      shardPeriod
+    } = nsqt._
+
+    it('Adds a received shard', () => {
+      let s = initialShardState('me')
+      let r = initialShardState('him')
+      let res = updateShardStatus(s, r)
+      expect(res).to.equal(false)
+      expect(s.seen['him'].id).to.equal('him')
+    })
+
+    it('Recognizes a received shard', () => {
+      let s = initialShardState('me')
+      let r = initialShardState('him')
+      updateShardStatus(s, r)
+      s.seen['him'].inactivePeriods = 1
+      updateShardStatus(s, r)
+      expect(s.seen['him'].id).to.equal('him')
+      expect(s.seen['him'].inactivePeriods).to.equal(0)
+    })
+
+    it('Removes an unseen shard', () => {
+      let s = initialShardState('me')
+      let r = initialShardState('him')
+      updateShardStatus(s, r)
+      expect(s.seen['him'].id).to.equal('him')
+      s.seen['him'].inactivePeriods = MAX_INACTIVE_SHARD_PERIODS
+      let res = shardPeriod(s)
+      expect(res).to.equal(false)
+      expect(s.seen['him']).to.equal(undefined)
+    })
+
+    it('Keeps an unseen shard for MAX_INACTIVE_SHARD_PERIODS', () => {
+      let s = initialShardState('me')
+      let r = initialShardState('him')
+      updateShardStatus(s, r)
+      expect(s.seen['him'].id).to.equal('him')
+      s.seen['him'].inactivePeriods = MAX_INACTIVE_SHARD_PERIODS - 1
+      let res = shardPeriod(s)
+      expect(res).to.equal(false)
+      expect(s.seen['him'].id).to.equal('him')
+    })
+
+    it('Accepts another master', () => {
+      let s = initialShardState('me')
+      let r = initialShardState('him')
+      s.quietPeriods = SETTLEMENT_SHARD_PERIODS + 1
+      r.quietPeriods = SETTLEMENT_SHARD_PERIODS + 1
+      r.masterId = r.id
+      r.active = [r.id]
+      expect(isMaster(r)).to.equal(true)
+      let res = updateShardStatus(s, r)
+      expect(res).to.equal(true)
+      expect(s.seen['him'].id).to.equal('him')
+      expect(s.masterId).to.equal('him')
+      expect(s.active).to.deep.equal(['him'])
+    })
+
+    it('Updates seen by', () => {
+      let s1 = initialShardState('s1')
+      let s2 = initialShardState('s2')
+      updateShardStatus(s1, s1)
+      expect(s1.seen['s1'] !== undefined)
+      updateShardStatus(s2, s1)
+      updateShardStatus(s1, s2)
+      expect(s1.seen['s1'] !== undefined)
+      expect(s1.seen['s1'].seenBy['s1']).to.equal(true)
+      expect(s1.seen['s1'].seenBy['s2']).to.equal(true)
+    })
+
+    it('Becomes master after SETTLEMENT_SHARD_PERIODS', () => {
+      let s1 = initialShardState('s1')
+      let s2 = initialShardState('s2')
+      updateShardStatus(s1, s1)
+      updateShardStatus(s1, s2)
+      s1.quietPeriods = SETTLEMENT_SHARD_PERIODS + 1
+      let res = shardPeriod(s1)
+      expect(res).to.equal(true)
+      expect(isMaster(s1)).to.equal(true)
+      expect(s1.active).to.deep.equal(['s1', 's2'])
+    })
   })
 })

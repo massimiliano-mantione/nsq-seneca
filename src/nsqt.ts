@@ -176,6 +176,189 @@ interface PendingJob {
   done: (err: undefined | Error, msg?: any) => void
 }
 
+// const SHARD_PERIOD_MILLISECONDS = 1000
+const MAX_INACTIVE_SHARD_PERIODS = 3
+const SETTLEMENT_SHARD_PERIODS = 5
+const NO_MASTER = 'ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ'
+
+export interface SeenShard {
+  id: string
+  inactivePeriods: number
+  seenBy: {[id: string]: boolean}
+}
+
+export interface ShardStatus {
+  id: string
+  masterId: string
+  generation: number
+  quietPeriods: number
+  seen: {
+    [id: string]: SeenShard
+  }
+  active: Array<string>
+}
+
+function isMaster (status: ShardStatus): boolean {
+  return status.id === status.masterId
+}
+
+function isQuiet (status: ShardStatus): boolean {
+  return status.quietPeriods > SETTLEMENT_SHARD_PERIODS
+}
+
+function getActiveShards(to: ShardStatus, from: ShardStatus): void {
+  to.active.length = 0
+  for (let activeShard of from.active) {
+    to.active.push(activeShard)
+  }
+}
+
+function initialShardState (id: string): ShardStatus {
+  return {
+    id: id,
+    masterId: NO_MASTER,
+    generation: 1,
+    quietPeriods: 0,
+    seen: {},
+    active: []
+  }
+}
+
+// Returns true if the active shards have changed
+function updateShardStatus (status: ShardStatus, received: ShardStatus): boolean {
+  let result = false
+  let receivedId = received.id
+
+  // State that we see the sender
+  let seenShard = status.seen[receivedId]
+  if (seenShard === undefined) {
+    seenShard = {
+      id: receivedId,
+      inactivePeriods: 0,
+      seenBy: {}
+    }
+    // TODO: This is true, but should be useless
+    // seenSender.seenBy[status.id] = true
+    status.seen[receivedId] = seenShard
+    // We added a new shard: the period is not quiet
+    received.quietPeriods = 0
+  } else {
+    // We have seen the shard, so it is active
+    seenShard.inactivePeriods = 0
+  }
+
+  // If the seen shard is not quiet, join it in waiting for settlement
+  if (received.quietPeriods > 1 && received.quietPeriods < status.quietPeriods) {
+    status.quietPeriods = received.quietPeriods - 1
+  }
+
+  // Track who is seen by the received shard 
+  for (let id of Object.keys(received.seen)) {
+    let shard = status.seen[id]
+    if (shard !== undefined) {
+      shard.seenBy[receivedId] = true
+    }
+  }
+
+  // Track who is not seen by the received shard 
+  for (let id of Object.keys(status.seen)) {
+    let shard = status.seen[id]
+    if (shard.seenBy[receivedId] && ! received.seen[id]) {
+      delete shard.seenBy[receivedId]
+    }
+  }
+
+  // Check if we should not be the master anymore
+  if (isMaster(status) &&
+      received.masterId < status.id &&
+      status.seen[received.masterId] &&
+      isQuiet(status)) {
+    // Give up master status
+    status.masterId = received.masterId
+    // Immediately update the active shards
+    getActiveShards(status, received)
+    result = true
+  }
+
+  // If we are not the master...
+  if (! isMaster(status)) {
+    // ...check if we must update the active shards
+    if (status.masterId !== received.masterId) {
+      status.masterId = received.masterId
+      status.generation = received.generation
+      getActiveShards(status, received)
+      result = true
+    }
+  }
+
+  return result
+}
+
+// Returns true if the active shards have changed
+function refreshActiveShards (status: ShardStatus): boolean {
+  // Recompute active shards
+  let newActive = [] as Array<string>
+  for (let id of Object.keys(status.seen)) {
+    newActive.push(id)
+  }
+  newActive.sort()
+
+  // Check if they are different
+  let newIsDifferent = status.active.length !== newActive.length
+  if (! newIsDifferent) {
+    for (let i = 0; i < newActive.length; i++) {
+      if (status.active[i] !== newActive[i]) {
+        newIsDifferent = true
+        break
+      }
+    }
+  }
+
+  // If they are different, perform the change
+  if (newIsDifferent) {
+    status.generation += 1
+    status.active = newActive
+  }
+
+  return newIsDifferent
+}
+
+// Returns true if the active shards have changed
+function shardPeriod (status: ShardStatus): boolean {
+  let result = false
+
+  // Increment quiet periods
+  status.quietPeriods += 1
+
+  // Check if there are shards that we don't see anymore
+  for (let id of Object.keys(status.seen)) {
+    let shard = status.seen[id]
+    shard.inactivePeriods += 1
+    if (shard.inactivePeriods > MAX_INACTIVE_SHARD_PERIODS) {
+      delete status.seen[id]
+      // We removed a shard: the period is not quiet
+      status.quietPeriods = 0
+    }
+  }
+
+  // Check if we should become the master
+  if (isQuiet(status) && ! isMaster(status) && status.seen[status.id] !== undefined) {
+    if (status.active.length === 0 || status.active[0] > status.id) {
+      status.masterId = status.id
+      status.generation = 0
+      refreshActiveShards(status)
+      result = true
+    }
+  }
+
+  // If we are the master and something changed recently, eventually refresh the active shards
+  if (isMaster(status) && ! isQuiet(status)) {
+    result = refreshActiveShards(status)
+  }
+
+  return result
+}
+
 function getLastNow (lastNow: number): number {
   let now = Date.now()
   if (now > lastNow) {
@@ -329,7 +512,7 @@ function connect (this: Seneca.Instance, isHandler: boolean, options: NsqOptions
 
     function cleanupPending () {
       let now = Date.now()
-      let array = pending.array 
+      let array = pending.array
       while (array.length > 0 && array[0].replyBy < now) {
         let job = array.shift() as PendingJob
         job.done(new Error('Message timed out, replyBy ' + job.replyBy + ', topic ' + replyTopic))
@@ -353,7 +536,15 @@ let internal = {
   readonly fillNsqOptions,
   readonly makePluginName,
   readonly makeBasePattern,
-  readonly SortedArray
+  readonly initialShardState,
+  readonly isMaster,
+  readonly updateShardStatus,
+  readonly refreshActiveShards,
+  readonly shardPeriod,
+  readonly SortedArray,
+  readonly MAX_INACTIVE_SHARD_PERIODS,
+  readonly SETTLEMENT_SHARD_PERIODS,
+  readonly NO_MASTER
 }
 export {
   connect,
