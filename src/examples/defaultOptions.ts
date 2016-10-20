@@ -1,5 +1,6 @@
 import * as nsqt from '../nsqt'
 let options: nsqt.NsqOptions = {
+  replyBy: 1000 * 60 * 20,
   writerNsqdHost: 'nsqd',
   writerNsqdPort: 4150,
   forwardDelay: 50,

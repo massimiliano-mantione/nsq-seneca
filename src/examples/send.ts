@@ -20,12 +20,12 @@ s.ready((err) => {
   console.log('Sececa ready')
   let action = () => {
     let now = millisecondsToString(Date.now())
-    console.log(worker, 'send job', now)
+    console.log(worker, now, '->')
     s.act({role: 'job', 'rt$': null, time: now, id: worker}, (err, rsp) => {
       if (err) {
         // console.log('ERROR', err)
       } else {
-        console.log(worker, '<-', rsp.id, rsp.time, '(', rsp.by, rsp.was, ')')
+        console.log(worker, rsp.was, '<-', '(', rsp.time, rsp.id, ')')
       }
     })
   }
