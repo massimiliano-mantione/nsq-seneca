@@ -30,7 +30,8 @@ build/Release
 node_modules
 jspm_packages
 typings
-compositions/node_modules/*
+composition-send-recv/node_modules/*
+composition-shards/node_modules/*
 
 # Transpiled files
 build

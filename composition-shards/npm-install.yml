@@ -1,0 +1,6 @@
+install:
+  image: node:6.6.0
+  volumes:
+    - ..:/source
+    - ./node_modules:/source/node_modules
+  command: 'bash -c "cd source && npm install --production"'
