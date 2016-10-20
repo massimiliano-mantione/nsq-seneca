@@ -17,7 +17,7 @@
 ---
 --boldon
 --ulon
---center Seneca
+--center Seneca.js
 --uloff
 --boldoff
 
@@ -90,6 +90,9 @@
 
 ---
  * they fig bugs for you
+
+---
+ * they go shopping for you
 
 ---
  * they make your code simpler
@@ -281,12 +284,18 @@ seneca.act({role: 'math', cmd: 'sum', a: 1, b: 2}, (err, response) => {
 ---
 --center One nsqd per producer
 
+---
+--exec eog -f NSQ-Connections.png
 
 ---
 --center A small cluster of nsqlookupd serving all consumers
 
 ---
---exec eog -f NSQ-Connections.png
+--center topics and channels do not need configuration
+---
+--center the discovery system is eventually consistent
+---
+--center with no persistent state!
 
 
 --newpage NSQ - Seneca
@@ -294,7 +303,7 @@ seneca.act({role: 'math', cmd: 'sum', a: 1, b: 2}, (err, response) => {
 
 
 ---
---center Not really
+--center Not fully
 
 ---
 --center NSQ has no built in req-reply
@@ -323,7 +332,8 @@ seneca.act({role: 'math', cmd: 'sum', a: 1, b: 2}, (err, response) => {
 
 ---
 --beginoutput
---center Stateless, decoupled, possibly idempotent services are its perfect match
+--center Stateless, decoupled, possibly idempotent services
+--center are its perfect match
 --endoutput
 
 
@@ -348,7 +358,7 @@ seneca.act({role: 'math', cmd: 'sum', a: 1, b: 2}, (err, response) => {
 
 
 ---
---center What do you mean by "stateful"
+--center What do you mean by "stateful"?
 
 ---
 --center Managing state is a mess
@@ -357,7 +367,11 @@ seneca.act({role: 'math', cmd: 'sum', a: 1, b: 2}, (err, response) => {
 --center Sharding is even worse
 
 ---
---center Transient state can be doable
+--boldon
+--ulon
+--center But transient state can be doable!
+--uloff
+--boldoff
 
 
 --newpage Stateful examples
@@ -370,6 +384,35 @@ seneca.act({role: 'math', cmd: 'sum', a: 1, b: 2}, (err, response) => {
 
 ---
 --center A cluster of "area" servers (Hyperfair)
+
+
+--newpage Stateful support
+--heading How does it work?
+
+---
+--center An ephemeral topic to announce servers
+--center (each server listens on a unique ephemeral channel)
+
+---
+--center Servers self-select a master
+
+---
+--center The master broadcasts the active shards
+--center (each shard has a unique topic)
+
+---
+--center Each client sends messages to the correct topic
+
+---
+--center Each server handles its messages and reroutes the others
+
+---
+--boldon
+--ulon
+--center Let's see!
+--uloff
+--boldoff
+
 
 
 --newpage Takeaway
@@ -385,10 +428,12 @@ seneca.act({role: 'math', cmd: 'sum', a: 1, b: 2}, (err, response) => {
 
 
 ---
---center code slides on github
+--center code and slides on github
 --center massimiliano-mantione / nsq-seneca
 
---beginslidebottom
 ---
+--boldon
+--ulon
 --center Thanks for listening!
---endslidebottom
+--uloff
+--boldoff
