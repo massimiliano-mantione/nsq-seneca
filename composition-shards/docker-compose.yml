@@ -29,7 +29,7 @@ users:
     - nsqd
     - nsqlookupd
   volumes:
-    - ./node_modules:/node_modules
+    - ../composition-libs/node_modules:/node_modules
     - ../build:/build
   command: 'node build/examples/users.js'
 
@@ -39,6 +39,6 @@ areas:
     - nsqd
     - nsqlookupd
   volumes:
-    - ./node_modules:/node_modules
+    - ../composition-libs/node_modules:/node_modules
     - ../build:/build
   command: 'node build/examples/areas.js'

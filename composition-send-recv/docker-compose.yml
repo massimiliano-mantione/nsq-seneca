@@ -29,9 +29,11 @@ send:
     - nsqd
     - nsqlookupd
   volumes:
-    - ./node_modules:/node_modules
+    - ../composition-libs/node_modules:/node_modules
     - ../build:/build
   command: 'node build/examples/send.js'
+  environment:
+    - DEBUG=nsqjs
 
 recv:
   image: node:6.6.0
@@ -39,9 +41,11 @@ recv:
     - nsqd
     - nsqlookupd
   volumes:
-    - ./node_modules:/node_modules
+    - ../composition-libs/node_modules:/node_modules
     - ../build:/build
   command: 'node build/examples/recv.js'
+  environment:
+    - DEBUG=nsqjs
 
 arch:
   image: node:6.6.0
@@ -49,6 +53,8 @@ arch:
     - nsqd
     - nsqlookupd
   volumes:
-    - ./node_modules:/node_modules
+    - ../composition-libs/node_modules:/node_modules
     - ../build:/build
   command: 'node build/examples/arch.js'
+  environment:
+    - DEBUG=nsqjs
