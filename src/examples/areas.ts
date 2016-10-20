@@ -3,7 +3,6 @@ import * as Seneca from 'seneca'
 import * as shortid from 'shortid'
 import * as nsqt from '../nsqt'
 
-import millisecondsToString from './millisecondsToString'
 import shardedOptions from './shardedOptions'
 let o = shardedOptions('areaId', 'area')
 
@@ -34,7 +33,7 @@ interface Areas {
 
 let worker = shortid.generate().slice(-2)
 
-function updateUser (areas: Areas, areaId: string, userId: string, time: string): AreaUser {
+function updateUser (areas: Areas, areaId: string, userId: string, time: string): Array<string> {
   let area = areas[areaId]
   if (area === undefined) {
     area = {
@@ -56,7 +55,7 @@ function updateUser (areas: Areas, areaId: string, userId: string, time: string)
 
   user.time = time
   user.idlePeriods = 0
-  return user
+  return Object.keys(area.users)
 }
 
 function processPeriod (areas: Areas): void {
@@ -100,8 +99,8 @@ s.ready((err) => {
 
   s.add({role: 'area', chan: 'area'}, (msg, done) => {
     let {areaId, userId, time} = msg
-    updateUser(areas, areaId, userId, time)
-    done(undefined, {areaId, userId, time, worker, now: millisecondsToString(Date.now())})
+    let users = updateUser(areas, areaId, userId, time)
+    done(undefined, {areaId, userId, time, worker, users})
   })
 
   setInterval(() => { processPeriod(areas) }, UPDATE_PERIOD)
