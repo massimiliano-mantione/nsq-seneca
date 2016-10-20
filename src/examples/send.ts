@@ -23,7 +23,7 @@ s.ready((err) => {
     console.log(worker, now, '->')
     s.act({role: 'job', 'rt$': null, time: now, id: worker}, (err, rsp) => {
       if (err) {
-        // console.log('ERROR', err)
+        console.log('ERROR', err)
       } else {
         console.log(worker, rsp.was, '<-', '(', rsp.time, rsp.id, ')')
       }
