@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "tslint --exclude src/seneca.d.ts --exclude src/nsqjs.d.ts 'src/**/*.ts'",
     "test": "mocha --require ts-node/register 'src/test/**/*.ts'",
-    "test-build": "mocha --require ts-node/register 'build/test/**/*.js'",
+    "test-build": "mocha 'build/test/**/*.js'",
     "tsc": "tsc"
   },
   "author": "Massimiliano Mantione",
