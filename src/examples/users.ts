@@ -9,9 +9,9 @@ let o = shardedOptions('areaId', 'area')
 let s = Seneca({ timeout: 9999 })
 s.use(nsqt.forward, o)
 
-const AREAS = 3
-const USERS = 5
-const INTERVAL = 5000
+const AREAS = 5
+const USERS = 9
+const INTERVAL = 4000
 
 function areaFromUser (user: number): number {
   let area = AREAS
