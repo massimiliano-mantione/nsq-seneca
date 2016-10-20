@@ -61,6 +61,9 @@ function updateUser (areas: Areas, areaId: string, userId: string, time: string)
 
 function processPeriod (areas: Areas): void {
   let areaIds = Object.keys(areas)
+  if (areaIds.length === 0) {
+    console.log('no areas')
+  }
   for (let k of areaIds) {
     let area = areas[k]
 
@@ -80,7 +83,7 @@ function processPeriod (areas: Areas): void {
         'users:', userIds.map((uid) => { return uid + ':' + area.users[uid].idlePeriods }).join(' '))
     } else {
       console.log(' --- area', k, 'removed')
-      delete area[k]
+      delete areas[k]
     }
   }
 }

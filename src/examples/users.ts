@@ -36,7 +36,7 @@ s.ready((err) => {
       console.log(' -> SEND', userId, areaId, now)
       s.act({role: 'area', 'rt$': null, userId, areaId, time: now}, (err, rsp) => {
         if (err) {
-          console.log('ERROR', err)
+          // console.log('ERROR', err)
         } else {
           console.log(' <- RECV', rsp.userId, rsp.areaId, rsp.time, rsp.worker, rsp.now)
         }

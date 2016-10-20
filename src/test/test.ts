@@ -108,7 +108,7 @@ describe('NSQ transport internals', () => {
       updateShardStatus(s, r)
       expect(s.seen['him'].id).to.equal('him')
       s.seen['him'].inactivePeriods = MAX_INACTIVE_SHARD_PERIODS
-      let res = shardPeriod(s)
+      let res = shardPeriod(s, true)
       expect(res).to.equal(false)
       expect(s.seen['him']).to.equal(undefined)
     })
@@ -119,7 +119,7 @@ describe('NSQ transport internals', () => {
       updateShardStatus(s, r)
       expect(s.seen['him'].id).to.equal('him')
       s.seen['him'].inactivePeriods = MAX_INACTIVE_SHARD_PERIODS - 1
-      let res = shardPeriod(s)
+      let res = shardPeriod(s, true)
       expect(res).to.equal(false)
       expect(s.seen['him'].id).to.equal('him')
     })
@@ -161,7 +161,7 @@ describe('NSQ transport internals', () => {
       updateShardStatus(s1, s1)
       updateShardStatus(s1, s2)
       s1.quietPeriods = SETTLEMENT_SHARD_PERIODS + 1
-      let res = shardPeriod(s1)
+      let res = shardPeriod(s1, true)
       expect(res).to.equal(true)
       expect(isMaster(s1)).to.equal(true)
       expect(s1.active.length).to.equal(2)

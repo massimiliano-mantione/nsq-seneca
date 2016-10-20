@@ -62,6 +62,7 @@ let nsqOptionsDefaults = {
   replyBy: 20000,
   replyToProperty: 'rt$',
   replyByProperty: 'rb$',
+  sharding: undefined,
   forwardDelay: 0,
   handleDelay: 0
 }
@@ -381,7 +382,7 @@ function refreshActiveShards (status: ShardStatus): boolean {
 }
 
 // Returns true if the active shards have changed
-function shardPeriod (status: ShardStatus): boolean {
+function shardPeriod (status: ShardStatus, isHandler: boolean): boolean {
   let result = false
 
   // Increment quiet periods
@@ -399,7 +400,7 @@ function shardPeriod (status: ShardStatus): boolean {
   }
 
   // Check if we should become the master
-  if (isQuiet(status) && ! isMaster(status) && status.seen[status.id] !== undefined) {
+  if (isHandler && isQuiet(status) && ! isMaster(status) && status.seen[status.id] !== undefined) {
     if (status.active.length === 0 || status.active[0].id > status.id) {
       status.masterId = status.id
       status.generation = 0
@@ -555,6 +556,20 @@ function connect (this: Seneca.Instance, isHandler: boolean, options: NsqOptions
       return reader
     }
 
+    function refreshShardReaders () {
+      while (shardReaders.length > 0) {
+        let reader = shardReaders.pop() as nsq.Reader
+        reader.close()
+      }
+      for (let active of shardStatus.active) {
+        if (active.id === id) {
+          for (let topic of active.topics) {
+            shardReaders.push(makeReader(topic))
+          }
+        }
+      }
+    }
+
     if (o.sharding !== undefined) {
       let shardsReader = new nsq.Reader(shardsTopic, id + EPHEMERAL, options)
       setTimeout(() => { shardsReader.connect() }, o.handleDelay * 2)
@@ -562,19 +577,9 @@ function connect (this: Seneca.Instance, isHandler: boolean, options: NsqOptions
         msg.finish()
         try {
           let m = msg.json() as ShardStatus
-          let changes = updateShardStatus(shardStatus, m)
-          if (changes && isHandler) {
-            while (shardReaders.length > 0) {
-              let reader = shardReaders.pop() as nsq.Reader
-              reader.close()
-            }
-            for (let active of m.active) {
-              if (active.id === id) {
-                for (let topic of active.topics) {
-                  shardReaders.push(makeReader(topic))
-                }
-              }
-            }
+          let changed = updateShardStatus(shardStatus, m)
+          if (changed && isHandler) {
+            refreshShardReaders()
           }
         } catch (e) {
           s.log.error(e)
@@ -588,18 +593,23 @@ function connect (this: Seneca.Instance, isHandler: boolean, options: NsqOptions
     }
 
     function handleShardPeriod () {
-      shardPeriod(shardStatus)
-      writer.publish(shardsTopic, shardStatus)
+      let changed = shardPeriod(shardStatus, isHandler)
+      if (isHandler) {
+        if (changed) {
+          refreshShardReaders()
+        }
+        writer.publish(shardsTopic, shardStatus)
+      }
     }
 
     let initialized = false
     function ready () {
       if (writerReady && !initialized) {
         initialized = true
-        setTimeout(cleanupPending, 5000)
+        setInterval(cleanupPending, 5000)
 
         if (o.sharding !== undefined) {
-          setTimeout(handleShardPeriod, SHARD_PERIOD_MILLISECONDS)
+          setInterval(handleShardPeriod, SHARD_PERIOD_MILLISECONDS)
         }
 
         s.add(bp, (arg, reply) => {
