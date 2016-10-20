@@ -68,14 +68,12 @@ let nsqOptionsDefaults = {
 }
 
 function fillNsqOptions (options: NsqOptions): NsqOptionsFilled {
-  let result = {} as NsqOptions
+  let result = Object.assign({}, options) as NsqOptions
   if (typeof options.topic === 'string') {
     result.topic = options.topic
   }
   for (let k of Object.keys(nsqOptionsDefaults)) {
-    if (typeof options[k] !== 'undefined') {
-      result[k] = options[k]
-    } else {
+    if (typeof options[k] === 'undefined') {
       result[k] = nsqOptionsDefaults[k]
     }
   }
