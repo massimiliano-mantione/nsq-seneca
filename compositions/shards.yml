@@ -1,0 +1,44 @@
+nsqlookupd:
+  image: nsqio/nsq:v0.3.8
+  ports:
+    - "4160:4160"
+    - "4161:4161"
+  command: 'nsqlookupd'
+
+nsqd:
+  image: nsqio/nsq:v0.3.8
+  ports:
+    - "4150:4150"
+    - "4151:4151"
+  links:
+    - nsqlookupd
+  command: 'nsqd --lookupd-tcp-address=nsqlookupd:4160'
+
+nsqadmin:
+  image: nsqio/nsq:v0.3.8
+  ports:
+    - "4171:4171"
+  links:
+    - nsqd
+    - nsqlookupd
+  command: 'nsqadmin --lookupd-http-address=nsqlookupd:4161'
+
+users:
+  image: node:6.6.0
+  links:
+    - nsqd
+    - nsqlookupd
+  volumes:
+    - ./node_modules:/node_modules
+    - ../build:/build
+  command: 'node build/examples/users.js'
+
+areas:
+  image: node:6.6.0
+  links:
+    - nsqd
+    - nsqlookupd
+  volumes:
+    - ./node_modules:/node_modules
+    - ../build:/build
+  command: 'node build/examples/areas.js'

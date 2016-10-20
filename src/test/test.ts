@@ -85,16 +85,16 @@ describe('NSQ transport internals', () => {
     } = nsqt._
 
     it('Adds a received shard', () => {
-      let s = initialShardState('me')
-      let r = initialShardState('him')
+      let s = initialShardState('me', 't')
+      let r = initialShardState('him', 't')
       let res = updateShardStatus(s, r)
       expect(res).to.equal(false)
       expect(s.seen['him'].id).to.equal('him')
     })
 
     it('Recognizes a received shard', () => {
-      let s = initialShardState('me')
-      let r = initialShardState('him')
+      let s = initialShardState('me', 't')
+      let r = initialShardState('him', 't')
       updateShardStatus(s, r)
       s.seen['him'].inactivePeriods = 1
       updateShardStatus(s, r)
@@ -103,8 +103,8 @@ describe('NSQ transport internals', () => {
     })
 
     it('Removes an unseen shard', () => {
-      let s = initialShardState('me')
-      let r = initialShardState('him')
+      let s = initialShardState('me', 't')
+      let r = initialShardState('him', 't')
       updateShardStatus(s, r)
       expect(s.seen['him'].id).to.equal('him')
       s.seen['him'].inactivePeriods = MAX_INACTIVE_SHARD_PERIODS
@@ -114,8 +114,8 @@ describe('NSQ transport internals', () => {
     })
 
     it('Keeps an unseen shard for MAX_INACTIVE_SHARD_PERIODS', () => {
-      let s = initialShardState('me')
-      let r = initialShardState('him')
+      let s = initialShardState('me', 't')
+      let r = initialShardState('him', 't')
       updateShardStatus(s, r)
       expect(s.seen['him'].id).to.equal('him')
       s.seen['him'].inactivePeriods = MAX_INACTIVE_SHARD_PERIODS - 1
@@ -125,23 +125,27 @@ describe('NSQ transport internals', () => {
     })
 
     it('Accepts another master', () => {
-      let s = initialShardState('me')
-      let r = initialShardState('him')
+      let s = initialShardState('me', 't')
+      let r = initialShardState('him', 't')
       s.quietPeriods = SETTLEMENT_SHARD_PERIODS + 1
       r.quietPeriods = SETTLEMENT_SHARD_PERIODS + 1
       r.masterId = r.id
-      r.active = [r.id]
+      r.active = [{
+        id: r.id,
+        topic: 't..foo',
+        topics: ['t..foo']
+      }]
       expect(isMaster(r)).to.equal(true)
       let res = updateShardStatus(s, r)
       expect(res).to.equal(true)
       expect(s.seen['him'].id).to.equal('him')
       expect(s.masterId).to.equal('him')
-      expect(s.active).to.deep.equal(['him'])
+      expect(s.active[0].id).to.equal('him')
     })
 
     it('Updates seen by', () => {
-      let s1 = initialShardState('s1')
-      let s2 = initialShardState('s2')
+      let s1 = initialShardState('s1', 't')
+      let s2 = initialShardState('s2', 't')
       updateShardStatus(s1, s1)
       expect(s1.seen['s1'] !== undefined)
       updateShardStatus(s2, s1)
@@ -152,15 +156,17 @@ describe('NSQ transport internals', () => {
     })
 
     it('Becomes master after SETTLEMENT_SHARD_PERIODS', () => {
-      let s1 = initialShardState('s1')
-      let s2 = initialShardState('s2')
+      let s1 = initialShardState('s1', 't')
+      let s2 = initialShardState('s2', 't')
       updateShardStatus(s1, s1)
       updateShardStatus(s1, s2)
       s1.quietPeriods = SETTLEMENT_SHARD_PERIODS + 1
       let res = shardPeriod(s1)
       expect(res).to.equal(true)
       expect(isMaster(s1)).to.equal(true)
-      expect(s1.active).to.deep.equal(['s1', 's2'])
+      expect(s1.active.length).to.equal(2)
+      expect(s1.active[0].id).to.equal('s1')
+      expect(s1.active[1].id).to.equal('s2')
     })
   })
 })
