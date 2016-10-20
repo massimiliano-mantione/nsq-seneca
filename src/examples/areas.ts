@@ -7,7 +7,7 @@ import millisecondsToString from './millisecondsToString'
 import shardedOptions from './shardedOptions'
 let o = shardedOptions('areaId', 'area')
 
-let s = Seneca()
+let s = Seneca({ timeout: 9999 })
 s.use(nsqt.handle, o)
 
 const UPDATE_PERIOD = 5000

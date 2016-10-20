@@ -23,7 +23,7 @@ nsqadmin:
     - nsqlookupd
   command: 'nsqadmin --lookupd-http-address=nsqlookupd:4161'
 
-w1:
+send:
   image: node:6.6.0
   links:
     - nsqd
@@ -31,9 +31,9 @@ w1:
   volumes:
     - ./node_modules:/node_modules
     - ../build:/build
-  command: 'node build/examples/w1.js'
+  command: 'node build/examples/send.js'
 
-w2:
+recv:
   image: node:6.6.0
   links:
     - nsqd
@@ -41,4 +41,14 @@ w2:
   volumes:
     - ./node_modules:/node_modules
     - ../build:/build
-  command: 'node build/examples/w2.js'
+  command: 'node build/examples/recv.js'
+
+arch:
+  image: node:6.6.0
+  links:
+    - nsqd
+    - nsqlookupd
+  volumes:
+    - ./node_modules:/node_modules
+    - ../build:/build
+  command: 'node build/examples/arch.js'
