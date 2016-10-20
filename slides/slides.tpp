@@ -13,6 +13,7 @@
 --newpage Intro
 --heading What am I Talking About?
 
+
 ---
 --boldon
 --ulon
@@ -20,8 +21,10 @@
 --uloff
 --boldoff
 
+
 ---
 --center and
+
 
 ---
 --boldon
@@ -34,20 +37,32 @@
 --newpage What are they?
 --heading But...
 
+
 ---
 --center What are they?
 
+
 ---
+--boldon
+--ulon
 --center Seneca
+--uloff
+--boldoff
 
 ---
 --center a microservices toolkit for node.js
 
+
 ---
+--boldon
+--ulon
 --center NSQ
+--uloff
+--boldoff
 
 ---
 --center a realtime distributed messaging platform
+
 
 ---
 --center Ok... why?
@@ -56,19 +71,26 @@
 --newpage Microservices
 --heading I smell microservices...
 
+
 ---
 --center Do you use them?
 
 ---
+--ulon
 --center You should!
+--uloff
 
 --beginslideleft
+
 ---
  * they are cool
+
 ---
  * they make you look smart
+
 ---
  * they fig bugs for you
+
 ---
  * they make your code simpler
 --endslideleft
@@ -77,20 +99,31 @@
 --newpage Costs
 --heading Wait... are you kidding me?
 
+
 ---
+--beginoutput
 --center Of course I am :-)
+--endoutput
+
 
 ---
 --center They actually have a cost
----
---center and they make your code *more* complex
 
 ---
+--ulon
+--center and they make your code *more* complex
+--uloff
+
+
+---
+--boldon
 --center (definitely not simpler)
+--boldoff
 
 
 --newpage More costs
 --heading I make a few claims
+
 
 ---
 --center a monolith is simpler than a distributed system
@@ -109,6 +142,7 @@
 --center those costs are worth it
 ---
 --center because the benefit you get are bigger
+
 ---
 * partial deployments
 ---
@@ -121,17 +155,25 @@
 * isolation of components
 
 ---
-(it's like with writing tests)
+--ulon
+--center (it's like with writing tests)
+--uloff
 
 
 --newpage Tools
 --heading Back to Earth
 
----
---center We can use tools to manage the complexity introduced by microservices
 
 ---
+--beginoutput
+--center We can use *tools* to manage
+--center the complexity introduced by microservices
+--endoutput
+
+---
+--ulon
 --center (also Erlang would do the job)
+--uloff
 
 
 --newpage Seneca
@@ -139,29 +181,62 @@
 
 ---
 --center lets us decompose our code into isolated actions
+
 ---
 --center each action handles "messages" (or "events") matching a given pattern
+
 ---
---center the action is then "invoked" implicitly other actions emitting messages matching that pattern
+--center each action is then "invoked" implicitly
+--center when other actions emit messages matching that pattern
+
 ---
 --center there is a concept of "transports" to invoke actions in other (remote) processes
 
+
+--newpage Seneca Code
+--heading Seneca example
+
+---
+--beginoutput
+// Action definition
+seneca.add({role: 'math', cmd: 'sum'}, (msg, done) => {
+  done(null, {result: (msg.a + msg.b)})
+})
+--endoutput
+
+---
+--beginoutput
+// Action invocation
+seneca.act({role: 'math', cmd: 'sum', a: 1, b: 2}, (err, response) => {
+  if (err) throw(err)
+  console.log('sum response', response.result)
+})
+--endoutput
 
 --newpage Service discovery
 --heading The next issue...
 
 ---
 --center ...is service discovery!
+
+
 ---
 --center all these processes must be connected somehow
+
 ---
+--boldon
 --center manual configuration is tedious and error prone
+--boldoff
+
 ---
+--ulon
 --center automatic discovery has its share of issues :-) 
+--uloff
 
 
 --newpage NSQ
 --heading NSQ
+
 
 ---
 --center Built at Bitly
@@ -182,6 +257,7 @@
 --newpage NSQ Concepts
 --heading NSQ Concepts
 
+
 ---
 --center Producer
 
@@ -201,8 +277,10 @@
 --newpage NSQ Topology
 --heading Recommended topology
 
+
 ---
 --center One nsqd per producer
+
 
 ---
 --center A small cluster of nsqlookupd serving all consumers
@@ -214,6 +292,7 @@
 --newpage NSQ - Seneca
 --heading Does it match Seneca?
 
+
 ---
 --center Not really
 
@@ -221,23 +300,31 @@
 --center NSQ has no built in req-reply
 
 ---
---center Routes by topic and not pattern
+--center Routes by topic and not by pattern
 
 
 --newpage NSQ strengths
 --heading NSQ provides
 
+
 ---
 --center proper broadcast
 ---
---center (have you tried "prior"?)
+--boldon
+--center (have you ever tried "prior"?)
+--boldoff
+
 ---
 --center good autodiscovery
+
 ---
 --center excellent resiliency
 
+
 ---
+--beginoutput
 --center Stateless, decoupled, possibly idempotent services are its perfect match
+--endoutput
 
 
 --newpage Demo!
@@ -255,15 +342,20 @@
 --newpage State management
 --heading I said stateless services
 
+
 ---
 --center What about stateful ones?
 
+
 ---
 --center What do you mean by "stateful"
+
 ---
 --center Managing state is a mess
+
 ---
 --center Sharding is even worse
+
 ---
 --center Transient state can be doable
 
@@ -271,8 +363,10 @@
 --newpage Stateful examples
 --heading A couple of use cases
 
+
 ---
 --center A cluster of web socket servers
+
 
 ---
 --center A cluster of "area" servers (Hyperfair)
@@ -281,28 +375,20 @@
 --newpage Takeaway
 --heading Wrapping up
 
+
 ---
 --center Seneca is excellent for organizing your code at the "action" level
 
+
 ---
 --center NSQ can help a lot when connecting your services 
+
+
+---
+--center code slides on github
+--center massimiliano-mantione / nsq-seneca
 
 --beginslidebottom
 ---
 --center Thanks for listening!
 --endslidebottom
-
-
---newpage Styles
-
---ulon
-underlined
---uloff
-
---revon
-reverse
---revoff
-
---boldon
-bold
---boldoff
