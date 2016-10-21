@@ -827,6 +827,8 @@ export {
   connect,
   options,
   forward,
+  forward as client,
   handle,
+  handle as listen,
   internal as _
 }
