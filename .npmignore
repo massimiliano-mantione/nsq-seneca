@@ -1,0 +1,14 @@
+.vscode
+composition-libs
+composition-send-recv
+composition-shards
+composition*
+node_modules
+slides
+src
+typings
+build/examples
+build/tests
+tsconfig.json
+tslint.json
+typings.json
