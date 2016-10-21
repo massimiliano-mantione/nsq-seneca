@@ -141,6 +141,8 @@ function defaultComparer<T> (a: T, b: T): number {
 
 // Used for the table of pending jobs (actions waiting for a reply)
 // Keeping the table sorted allows us to find jobs by binary search
+// Most importantly, sorting by `replyBy` allows us to quickly find
+// the expired jobs by scanning the start of the array
 class SortedArray<T> {
   array: Array<T>
   compare: (a: T, b: T) => number
